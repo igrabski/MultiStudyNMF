@@ -8,14 +8,20 @@ Below, we describe the usage of our code. We also include example data and detai
 
 ## Usage: Discovery-Only Model
 
-The only required input to the discovery-only model is a list of mutational counts matrices, where each such matrix corresponds to one dataset/group and is in *mutational motifs x samples* format. Optionally, there are hyperparameters that can be adjusted, but for most purposes, the default hyperparameters should suffice. If we call this list `M`, then the sampler can be run as follows:
+The only required input to the discovery-only model is a list of mutational counts matrices, where each such matrix corresponds to one dataset/group and is in *mutational motifs x samples* format. Optionally, there are hyperparameters that can be adjusted, but for most purposes, the default hyperparameters should suffice. If we call this list `M`, then in the first step, the sampler can be run as follows:
 
 ```
 source('Discovery_Only.R')
 results <- discovery_sampler(M)
 ```
 
-The output of this run is a list of three components. The first is a list of the most frequently occurring `A` matrices; the second is a list of corresponding signature estimates; and the third is a list of corresponding exposure estimates. The `A` matrix is a binary matrix indicating which signature belongs to each group, such that entry $(i,j) = 1$ if signature $j$ belongs to group $i$ and $0$ otherwise. To identify the best solution among these, the second step is to re-run the sampler conditional on each of these `A`s and estimate the marginal likelihood in each case. This can be done as follows:
+The output of this run is a list of three components:
+
+1. A list of the five most frequently occurring `A` matrices. Each is a *group x signatures* binary matrix indicating whether each signature belongs to each group, such that entry $(i,j)=1$ if signature $j$ belongs to group $i$ and $0$ otherwise. 
+2. A list of the five corresponding signature estimates (used in the second step).
+3. A list of the five corresponding exposure estimates (used in the second step).
+
+To identify the best solution among these, the second step is to re-run the sampler conditional on each of these `A`s and estimate the marginal likelihood in each case. This can be done as follows:
 
 ```
 results2 <- lapply(1:5,function(x)
@@ -23,7 +29,13 @@ results2 <- lapply(1:5,function(x)
                     inits=list(results[[2]][[x]],results[[3]][[x]])))
 ```
 
-Note the additional arguments required here. The output of each individual call of `discovery_sampler` here is a list of three components: the estimated marginal log-likelihood, the fixed `A` matrix, and the posterior median estimate of the signatures matrix `P`. The solution with largest marginal log-likelihood can be thought of as the best solution. 
+Note the additional arguments required here. The output of each individual call of `discovery_sampler` here is a list of three components:
+
+1. The estimated marginal log-likelihood.
+2. The fixed `A` matrix that was inputted.
+3. The posterior median estimate of the signatures matrix, in the *mutational motifs x signatures* format. The columns of this matrix match the columns of `A`. 
+
+The solution with largest marginal log-likelihood can be thought of as the best solution. 
 
 ## Usage: Recovery-Discovery Model
 
@@ -34,7 +46,16 @@ source('Recovery_Discovery.R')
 results <- recovery_discovery(M)
 ```
 
-The output of this run is a list of six components: the first three correspond to the discovery component (a list of the most frequently occurring `A` matrices in the discovery component, a list of corresponding signature estimates, and a list of corresponding exposure estimates) and the remaining three correspond to the recovery component (a list of the most frequently occurring `A` matrices in the recovery component, a list of corresponding signature estimates, and a list of corresponding exposure estimates). Here, the discovery component refers to novel detected signatures, and the recovery component refers to signatures with informative priors based on known signatures. The `A` matrix is a binary matrix indicating which signature belongs to each group, such that entry $(i,j) = 1$ if signature $j$ belongs to group $i$ and $0$ otherwise. In particular, the informative priors in this current version are built to represent the 78 signatures from the COSMIC v3.2 release. To identify the best solution among these, the second step is to re-run the sampler condition on these `A` matrices and estimate the marginal likelihood in each case. This can be done as follows:
+The output of this run is a list of six components, where the first three correspond to the discovery component and the remaining three correspond to the recovery component. Here, the discovery component refers to novel detected signatures, and the recovery component refers to signatures with informative priors based on known signatures. In particular, the informative priors in this current version are built to represent the 78 signatures from the COSMIC v3.2 release. In detail, the six components of the output are:
+
+1. A list of the `A` matrices for the discovery component, from the five most frequently occurring pairs of discovery and recovery `A` matrices. Each is a *group x discovered signatures* binary matrix indicating whether each signature belongs to each group, such that entry $(i,j)=1$ if discovered signature $j$ belongs to group $i$ and $0$ otherwise.
+2. A list of the five corresponding signature estimates for the discovery component (used in the second step).
+3. A list of the five corresponding exposure estimates for the discovery component (used in the third step).
+4. A list of the `A` matrices for the recovery component, from the five most frequently occurring pairs of discovery and recovery `A` matrices. Each is a *group x recovered signatures* binary matrix.
+5. A list of the five corresponding signature estimates for the recovery component (used in the second step).
+6. A list of the five corresponding exposure estimates for the recovery component (used in the third step).
+
+To identify the best solution among these, the second step is to re-run the sampler conditional on these `A` matrices and estimate the marginal likelihood in each case. This can be done as follows:
 
 ```
 results2 <- lapply(1:5,function(x)
@@ -42,7 +63,13 @@ results2 <- lapply(1:5,function(x)
                      inits=list(results[[2]][[x]],results[[3]][[x]],results[[5]][[x]],results[[6]][[x]])))
 ```
 
-Note the additional arguments required here. The output of each individual call of `recovery_discovery` here is a list of three components: the estimated marginal log-likelihood, a list of the fixed `A` matrices for the discovery and recovery component respectively, and a list of the posterior median estimates of the signatures matrix for the discovery and recovery component respectively. The solution with largest marginal log-likelihood can be thought of as the best solution. 
+Note the additional arguments required here. The output of each individual call of `recovery_discovery` here is a list of three components: 
+
+1. The estimated marginal log-likelihood.
+2. A list consisting of the fixed `A` matrices for the discovery and recovery component respectively.
+3. A list of the posterior median estimates of the signatures matrix for the discovery and recovery component respectively. Each is in the *mutational motifs x signatures* format, and their columns match the columns of the discovery and recovery `A`s. 
+
+The solution with largest marginal log-likelihood can be thought of as the best solution. 
 
 ## Usage: Discovery-Only Model with Covariates
 
@@ -53,7 +80,13 @@ source('Discovery_Only_Covariates.R')
 results <- discovery_covariates(M,cov)
 ```
 
-The output of this run is a list of three components. The first is a list of the most frequently occurring `A` matrices; the second is a list of corresponding signature estimates; and the third is a list of corresponding exposure estimates. The `A` matrix is a binary matrix indicating which signature belongs to each group, such that entry $(i,j) = 1$ if signature $j$ belongs to group $i$ and $0$ otherwise. To identify the best solution among these, the second step is to re-run the sampler conditional on each of these `A`s and estimate the marginal likelihood in each case. This can be done as follows:
+The output of this run is a list of three components:
+
+1. A list of the five most frequently occurring `A` matrices. Each is a *group x signatures* binary matrix indicating whether each signature belongs to each group, such that entry $(i,j)=1$ if signature $j$ belongs to group $i$ and $0$ otherwise. 
+2. A list of the five corresponding signature estimates (used in the second step).
+3. A list of the five corresponding exposure estimates (used in the second step). 
+
+To identify the best solution among these, the second step is to re-run the sampler conditional on each of these `A`s and estimate the marginal likelihood in each case. This can be done as follows:
 
 ```
 results2 <- lapply(1:5,function(x)
@@ -61,7 +94,15 @@ results2 <- lapply(1:5,function(x)
                     inits=list(results[[2]][[x]],results[[3]][[x]])))
 ```
 
-Note the additional arguments required here. The output of each individual call of `discovery_covariates` here is a list of five components: the estimated marginal log-likelihood, the fixed `A` matrix, the posterior median estimate of the signatures matrix `P`, a list of the posterior inclusion probabilities (PIPs) of each covariate for each signature in each dataset, and a list of the posterior median coefficient estimates of each covariate for each signature in each dataset. The solution with largest marginal log-likelihood can be thought of as the best solution. Note that the PIP and coefficient estimate matrices are in the format of *covariates x signatures*. Values of `NA` are used when a given signature does not belong to that dataset and, in the case of the coefficient estimate matrices, when a given covariate has a PIP of 0 for that signature.
+Note the additional arguments required here. The output of each individual call of `discovery_covariates` here is a list of five components: 
+
+1. The estimated marginal log-likelihood.
+2. The fixed `A` matrix.
+3. The posterior median estimate of the signatures matrix in the *mutational motifs x signatures* format. The columns of this matrix match the columns of `A`.  
+4. A list consisting of the posterior inclusion probabilities (PIPs) for each dataset, in the same order as `M` and `cov`. For each dataset, the PIPs represent the posterior probability that each covariate has an effect on each signature, and are in *covariate x signature* format. The columns match the order of the `A` matrix. Values of `NA` are used when a given signature does not belong to that dataset.
+5. A list consisting of the posterior median coefficients for each dataset, in the same order as `M` and `cov`. For each dataset, this is a matrix in *covariate x signature* format, with columns matching the order of the `A` matrix. Values of `NA` are used when a given signature does not belong to that dataset, as well as when a given covariate has a PIP of 0 for that signature in that dataset.
+
+The solution with largest marginal log-likelihood can be thought of as the best solution. 
 
 ## Usage: Recovery-Discovery Model with Covariates
 
@@ -72,7 +113,16 @@ source('Recovery_Discovery_Covariates.R')
 results <- recovery_discovery_covariates(M,cov)
 ```
 
-The output of this run is a list of six components: the first three correspond to the discovery component (a list of the most frequently occurring `A` matrices in the discovery component, a list of corresponding signature estimates, and a list of corresponding exposure estimates) and the remaining three correspond to the recovery component (a list of the most frequently occurring `A` matrices in the recovery component, a list of corresponding signature estimates, and a list of corresponding exposure estimates). Here, the discovery component refers to novel detected signatures, and the recovery component refers to signatures with informative priors based on known signatures. The `A` matrix is a binary matrix indicating which signature belongs to each group, such that entry $(i,j) = 1$ if signature $j$ belongs to group $i$ and $0$ otherwise. In particular, the informative priors in this current version are built to represent the 78 signatures from the COSMIC v3.2 release. To identify the best solution among these, the second step is to re-run the sampler condition on these `A` matrices and estimate the marginal likelihood in each case. This can be done as follows:
+The output of this run is a list of six components: the first three correspond to the discovery component, and the remaining three correspond to the recovery component. Here, the discovery component refers to novel detected signatures, and the recovery component refers to signatures with informative priors based on known signatures. In particular, the informative priors in this current version are built to represent the 78 signatures from the COSMIC v3.2 release. In detail, the six components of the output are:
+
+1. A list of the `A` matrices for the discovery component, from the five most frequently occurring pairs of discovery and recovery `A` matrices. Each is a *group x discovered signatures* binary matrix indicating whether each signature belongs to each group, such that entry $(i,j)=1$ if discovered signature $j$ belongs to group $i$ and $0$ otherwise.
+2. A list of the five corresponding signature estimates for the discovery component (used in the second step).
+3. A list of the five corresponding exposure estimates for the discovery component (used in the third step).
+4. A list of the `A` matrices for the recovery component, from the five most frequently occurring pairs of discovery and recovery `A` matrices. Each is a *group x recovered signatures* binary matrix.
+5. A list of the five corresponding signature estimates for the recovery component (used in the second step).
+6. A list of the five corresponding exposure estimates for the recovery component (used in the third step).
+
+To identify the best solution among these, the second step is to re-run the sampler condition on these `A` matrices and estimate the marginal likelihood in each case. This can be done as follows:
 
 ```
 results2 <- lapply(1:5,function(x)
@@ -80,4 +130,12 @@ results2 <- lapply(1:5,function(x)
                     inits=list(results[[2]][[x]],results[[3]][[x]],results[[5]][[x]],results[[6]][[x]])))
 ```
 
-Note the additional arguments required here. The output of each individual call of `recovery_discovery_covariates` here is a list of five components: the estimated marginal log-likelihood, a list of the fixed `A` matrices for the discovery and recovery component respectively, a list of the posterior median estimates of the signatures matrix for the discovery and recovery component respectively, a list of the lists of posterior inclusion probabilities (PIPs) of each covariate for each signature in each dataset in the discovery and recovery component respectively, and a list of the lists of posterior median coefficient estimates of each covariate for each signature in each dataset in the discovery and recovery component respectively. The solution with largest marginal log-likelihood can be thought of as the best solution. Note that the PIP and coefficient estimate matrices are in the format of *covariates x signatures*. Values of `NA` are used when a given signature does not belong to that dataset and, in the case of the coefficient estimate matrices, when a given covariate has a PIP of 0 for that signature.
+Note the additional arguments required here. The output of each individual call of `recovery_discovery_covariates` here is a list of five components: 
+
+1. The estimated marginal log-likelihood.
+2. A list consisting of the fixed `A` matrices for the discovery and recovery component respectively.
+3. A list of the posterior median estimates of the signatures matrix for the discovery and recovery component respectively. Each is in the *mutational motifs x signatures* format, and their columns match the columns of the discovery and recovery `A`s.  
+4. A list consisting of the posterior inclusion probabilities (PIPs) for each dataset, in the same order as `M` and `cov`, for the discovery and recovery components respectively. For each dataset, the PIPs represent the posterior probability that each covariate has an effect on each signature, and are in *covariate x signature* format. The columns match the order of the appropriate `A` matrix. Values of `NA` are used when a given signature does not belong to that dataset.
+5. A list consisting of the posterior median coefficients for each dataset, in the same order as `M` and `cov`, for the discovery and recovery components respectively. For each dataset, this is a matrix in *covariate x signature* format, with columns matching the order of the appropriate `A` matrix. Values of `NA` are used when a given signature does not belong to that dataset, as well as when a given covariate has a PIP of 0 for that signature in that dataset.
+
+The solution with largest marginal log-likelihood can be thought of as the best solution. 
