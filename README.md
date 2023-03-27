@@ -139,3 +139,11 @@ Note the additional arguments required here. The output of each individual call 
 5. A list consisting of the posterior median coefficients for each dataset, in the same order as `M` and `cov`, for the discovery and recovery components respectively. For each dataset, this is a matrix in *covariate x signature* format, with columns matching the order of the appropriate `A` matrix. Values of `NA` are used when a given signature does not belong to that dataset, as well as when a given covariate has a PIP of 0 for that signature in that dataset.
 
 The solution with largest marginal log-likelihood can be thought of as the best solution. 
+
+## Demos
+
+We include here a demo for each approach, i.e. discovery-only, recovery-discovery, discovery-only with covariates, and recovery-discovery with covariates. These demos require three publicly available data files:
+
+* [COSMIC v3.2 signatures](https://cancer.sanger.ac.uk/signatures/documents/453/COSMIC_v3.2_SBS_GRCh38.txt)
+* [WGS_PCAWG.96.csv](https://www.synapse.org/#!Synapse:syn11726620)
+* [WGS_Other.96.csv](https://www.synapse.org/#!Synapse:syn11726617)
