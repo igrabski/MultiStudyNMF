@@ -50,10 +50,10 @@ The output of this run is a list of six components, where the first three corres
 
 1. A list of the `A` matrices for the discovery component, from the five most frequently occurring pairs of discovery and recovery `A` matrices. Each is a *group x discovered signatures* binary matrix indicating whether each signature belongs to each group, such that entry $(i,j)=1$ if discovered signature $j$ belongs to group $i$ and $0$ otherwise.
 2. A list of the five corresponding signature estimates for the discovery component (used in the second step).
-3. A list of the five corresponding exposure estimates for the discovery component (used in the third step).
+3. A list of the five corresponding exposure estimates for the discovery component (used in the second step).
 4. A list of the `A` matrices for the recovery component, from the five most frequently occurring pairs of discovery and recovery `A` matrices. Each is a *group x recovered signatures* binary matrix.
 5. A list of the five corresponding signature estimates for the recovery component (used in the second step).
-6. A list of the five corresponding exposure estimates for the recovery component (used in the third step).
+6. A list of the five corresponding exposure estimates for the recovery component (used in the second step).
 
 To identify the best solution among these, the second step is to re-run the sampler conditional on these `A` matrices and estimate the marginal likelihood in each case. This can be done as follows:
 
@@ -117,10 +117,10 @@ The output of this run is a list of six components: the first three correspond t
 
 1. A list of the `A` matrices for the discovery component, from the five most frequently occurring pairs of discovery and recovery `A` matrices. Each is a *group x discovered signatures* binary matrix indicating whether each signature belongs to each group, such that entry $(i,j)=1$ if discovered signature $j$ belongs to group $i$ and $0$ otherwise.
 2. A list of the five corresponding signature estimates for the discovery component (used in the second step).
-3. A list of the five corresponding exposure estimates for the discovery component (used in the third step).
+3. A list of the five corresponding exposure estimates for the discovery component (used in the second step).
 4. A list of the `A` matrices for the recovery component, from the five most frequently occurring pairs of discovery and recovery `A` matrices. Each is a *group x recovered signatures* binary matrix.
 5. A list of the five corresponding signature estimates for the recovery component (used in the second step).
-6. A list of the five corresponding exposure estimates for the recovery component (used in the third step).
+6. A list of the five corresponding exposure estimates for the recovery component (used in the second step).
 
 To identify the best solution among these, the second step is to re-run the sampler condition on these `A` matrices and estimate the marginal likelihood in each case. This can be done as follows:
 
