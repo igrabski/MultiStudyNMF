@@ -1,0 +1,90 @@
+---
+title: 'Demo: Discovery Only'
+author: "Isabella Grabski"
+date: '2023-03-16'
+output: html_document
+---
+
+First, we read in data from PCAWG. As a simple example, we consider two studies: lung adenocarcinoma and lung squamous cell carcinoma. 
+
+```{r}
+source('Discovery_Only.R')
+
+# Load in data and reorder the categories to match COSMIC
+data <- read.csv('WGS_PCAWG.96.csv')
+cosmic <- read.table('COSMIC_v3.2_SBS_GRCh38.txt',header=T)
+rownames(data) <- paste0(substr(data$Trinucleotide,0,1),'[',
+                         data$Mutation.type,']',
+                         substr(data$Trinucleotide,3,3))
+data <- data[cosmic$Type,]
+
+# Subset to the two cancers of interest
+M <- list(as.matrix(data[,substr(colnames(data),0,10)=='Lung.Adeno']),
+          as.matrix(data[,substr(colnames(data),0,10)=='Lung.SCC..']))
+```
+
+Now we can run the discovery-only sampler. Note that the runtime can take many hours depending on the size of the data; usage of a computing cluster is advised. Here, we load in stored results. 
+
+```{r,eval=FALSE}
+# Run discovery-only sampler (NOT RUN)
+set.seed(31623)
+results <- discovery_sampler(M)
+for (x in 1:5) { print(results[[1]][[x]]) }
+```
+
+```{r}
+# Load in stored results
+load('discovery_only_run1.rda')
+for (x in 1:5) { print(results[[1]][[x]]) }
+```
+
+This function returns the five most frequently occurring values of the $\mathcal{A}$ matrix from the MCMC chain, which indicates which signatures belong to which study, as well as corresponding values of the signatures matrix $\boldsymbol{P}$ and the exposures matrix $\boldsymbol{E}$. To choose a final solution, we can run the sampler conditional on each of these values of $\mathcal{A}$, using these values of $\boldsymbol{P}, \boldsymbol{E}$ as initializations, and estimate the marginal likelihood in each case. Here, again, we load in stored results. 
+
+```{r,eval=FALSE}
+# Run sampler conditional on each value (NOT RUN)
+set.seed(31623)
+results2 <- lapply(1:5,function(x)
+  discovery_sampler(M,first=F,fixed=T,A.fixed=results[[1]][[x]],
+                    inits=list(results[[2]][[x]],results[[3]][[x]])))
+for (x in 1:5) { print(results2[[x]][[1]]) }
+```
+
+```{r}
+# Load in stored results
+load('discovery_only_run2.rda')
+for (x in 1:5) { print(results2[[x]][[1]]) }
+```
+
+Our output includes the marginal likelihood, the fixed value of $\mathcal{A}$, and the posterior median estimate of $\boldsymbol{P}$. In this case, the largest marginal likelihood corresponds to the 2nd solution. If we label each signature in our estimate of $\boldsymbol{P}$ by its closest match from COSMIC, we can interpret the $\mathcal{A}$ matrix of this solution:
+
+```{r}
+# Annotate each signature with its closest match
+label_A <- function(A,P) {
+  true.sigs <- read.table('COSMIC_v3.2_SBS_GRCh38.txt',header=T)
+  P <- P[,which(colSums(A)>0),drop=F]
+  if (ncol(P)==0) {
+    return(0)
+  }
+  cosD <- cosineDist(t(P),t(true.sigs[,2:ncol(true.sigs)]))
+  unl <- 1
+  sigs.new <- array(P,dim=c(96,ncol(P)))
+  colnames(sigs.new) <- 1:ncol(sigs.new)
+  for (i in 1:ncol(sigs.new)) {
+    m <- which.max(cosD[i,])
+    if (cosD[i,m]>=0.8) {
+      colnames(sigs.new)[i] <- colnames(true.sigs[,2:ncol(true.sigs)])[m]
+    } else {
+      colnames(sigs.new)[i] <- paste('Unlabeled',unl)
+      unl <- unl + 1
+    }
+  }
+  colnames(sigs.new) <- make.unique(colnames(sigs.new))
+  colnames(A) <- 1:ncol(A)
+  colnames(A)[which(colSums(A)>0)] <- colnames(sigs.new)
+  return(A[,which(colSums(A)>0)])
+}
+
+label_A(results2[[2]][[2]],results2[[2]][[3]])
+```
+
+The rows of the $\mathcal{A}$ matrix match the order of the data inputs, so the first row indicates which signatures are present in the lung adenocarcinoma data, and the second row indicates which signatures are present in the lung squamous cell data. Here, we see that both cancers contain SBS 2, SBS 13, SBS 4, and SBS 5, but only adenocarcinoma contains SBS 17b, and only squamous cell contains SBS 33. There are also two signatures (one common to both and one belonging to just squamous cell) that don't match any signatures from COSMIC; these could be novel signatures, lung-specific versions of signatures that sufficiently differ from COSMIC's estimates, or simply noisy estimates. Similarly, there are two signatures found that match SBS 4, which could again indicate either two types of related signal or just noise. If we wish to more precisely understand the signatures in these data as they relate to COSMIC, we could instead run the recovery-discovery sampler.

@@ -1,0 +1,140 @@
+---
+title: 'Demo: Discovery Only with Covariates'
+author: "Isabella Grabski"
+date: '2023-03-16'
+output: html_document
+---
+
+First, we read in data from PCAWG. As a simple example, we consider two related cancer types (non-Hodgkin's lymphoma and chronic lymphocytic leukemia) from two different cohorts (PCAWG and an additional cohort). For the purposes of demonstrating this approach, we mix together both cancer types, and separate into two studies by cohort. We use the cancer type as the covariate, and also create a second, randomly generated covariate that we know ahead of time should not have any effects.
+
+```{r}
+source('Discovery_Only_Covariates.R')
+
+# Load in data and reorder the categories to match COSMIC
+data <- read.csv('WGS_PCAWG.96.csv')
+cosmic <- read.table('COSMIC_v3.2_SBS_GRCh38.txt',header=T)
+rownames(data) <- paste0(substr(data$Trinucleotide,0,1),'[',
+                         data$Mutation.type,']',
+                         substr(data$Trinucleotide,3,3))
+data <- data[cosmic$Type,]
+
+other <- read.csv('WGS_Other.96.csv')
+rownames(other) <- paste0(substr(other$Trinucleotide,0,1),'[',
+                         other$Mutation.type,']',
+                         substr(other$Trinucleotide,3,3))
+other <- other[cosmic$Type,]
+
+# Subset to the two cancers of interest
+cancer_id <- substr(colnames(data),0,10)
+names(cancer_id) <- colnames(data)
+cancer_id2 <- substr(colnames(other),0,10)
+names(cancer_id2) <- colnames(other)
+
+data <- data[,cancer_id%in%c('Lymph.BNHL','Lymph.CLL.')]
+cancer_id <- cancer_id[colnames(data)]
+other <- other[,cancer_id2%in%c('Lymph.BNHL','Lymph.CLL.')]
+cancer_id2 <- cancer_id2[colnames(other)]
+
+set.seed(31623)
+subsamp1 <- sample(1:ncol(data),40,replace=F)
+data <- data[,subsamp1]
+cancer_id <- cancer_id[subsamp1]
+names(cancer_id) <- NULL
+
+subsamp2 <- sample(which(cancer_id2=='Lymph.CLL.'),30,replace=F)
+other <- other[,c(which(cancer_id2=='Lymph.BNHL'),subsamp2)]
+cancer_id2 <- cancer_id2[c(which(cancer_id2=='Lymph.BNHL'),subsamp2)]
+names(cancer_id2) <- NULL
+
+# Set up final data and covariates input
+cancer_id <- ifelse(cancer_id=='Lymph.CLL.',1,0)
+cancer_id2 <- ifelse(cancer_id2=='Lymph.CLL.',1,0)
+M <- list(as.matrix(data),
+          as.matrix(other))
+cov <- list(as.matrix(rbind(cancer_id,rnorm(ncol(data)))),
+            as.matrix(rbind(cancer_id2,rnorm(ncol(other)))))
+```
+
+Now we can run the discovery-only sampler with covariates. Note that the runtime can take many hours depending on the size of the data; usage of a computing cluster is advised. Here, we load in stored results. 
+
+```{r,eval=FALSE}
+# Run discovery-only sampler with covariates (NOT RUN)
+set.seed(31623)
+results <- discovery_covariates(M,cov)
+for (x in 1:5) { print(results[[1]][[x]]) }
+```
+
+```{r}
+# Load in stored results
+load('discovery_covariates_run1.rda')
+for (x in 1:5) { print(results[[1]][[x]]) }
+```
+
+This function returns the five most frequently occurring values of the $\mathcal{A}$ matrix from the MCMC chain, which indicates which signatures belong to which study, as well as corresponding values of the signatures matrix $\boldsymbol{P}$ and the exposures matrix $\boldsymbol{E}$. To choose a final solution, we can run the sampler conditional on each of these values of $\mathcal{A}$, using these values of $\boldsymbol{P}, \boldsymbol{E}$ as initializations, and estimate the marginal likelihood in each case. Here, again, we load in stored results. 
+
+```{r,eval=FALSE}
+# Run sampler conditional on each value (NOT RUN)
+set.seed(31623)
+results2 <- lapply(1:5,function(x)
+  discovery_covariates(M,cov,first=F,fixed=T,A.fixed=results[[1]][[x]],
+                    inits=list(results[[2]][[x]],results[[3]][[x]])))
+for (x in 1:5) { print(results2[[x]][[1]]) }
+```
+
+```{r}
+# Load in stored results
+load('discovery_covariates_run2.rda')
+for (x in 1:5) { print(results2[[x]][[1]]) }
+```
+
+Our output includes the marginal likelihood, the fixed value of $\mathcal{A}$, and the posterior median estimate of $\boldsymbol{P}$. In this case, the largest marginal likelihood corresponds to the 2nd solution. If we label each signature in our estimate of $\boldsymbol{P}$ by its closest match from COSMIC, we can interpret the $\mathcal{A}$ matrix of this solution:
+
+```{r}
+# Annotate each signature with its closest match
+label_A <- function(A,P) {
+  true.sigs <- read.table('COSMIC_v3.2_SBS_GRCh38.txt',header=T)
+  P <- P[,which(colSums(A)>0),drop=F]
+  if (ncol(P)==0) {
+    return(0)
+  }
+  cosD <- cosineDist(t(P),t(true.sigs[,2:ncol(true.sigs)]))
+  unl <- 1
+  sigs.new <- array(P,dim=c(96,ncol(P)))
+  colnames(sigs.new) <- 1:ncol(sigs.new)
+  for (i in 1:ncol(sigs.new)) {
+    m <- which.max(cosD[i,])
+    if (cosD[i,m]>=0.8) {
+      colnames(sigs.new)[i] <- colnames(true.sigs[,2:ncol(true.sigs)])[m]
+    } else {
+      colnames(sigs.new)[i] <- paste('Unlabeled',unl)
+      unl <- unl + 1
+    }
+  }
+  colnames(sigs.new) <- make.unique(colnames(sigs.new))
+  colnames(A) <- 1:ncol(A)
+  colnames(A)[which(colSums(A)>0)] <- colnames(sigs.new)
+  return(A[,which(colSums(A)>0)])
+}
+
+label_A(results2[[2]][[2]],results2[[2]][[3]])
+```
+
+The rows of the $\mathcal{A}$ matrix match the order of the data inputs, so the first row indicates which signatures are present in the PCAWG cohort, and the second row indicates which signatures are present in the other cohort. Here, we see that SBS 5 appears in both cohorts, but SBS 17b and SBS 9 are unique to the PCAWG cohort. 
+
+We also have estimates of two quantities relating to the covariates: the posterior inclusion probabilities (PIPs) for whether or not each covariate has an effect on each signature, and the posterior median estimates of the corresponding coefficients. We can view these as follows:
+
+```{r}
+# Look at PIPs
+results2[[2]][[4]]
+```
+
+Each matrix in this list corresponds to a study; here, the first matrix represents the PIPs in the PCAWG cohort, and the second matrix represents the PIPs in the other cohort. The rows correspond to the covariates, in the same order as inputted, and the columns correspond to the signatures, in the same order as found above. A column of NAs indicates that a given signature was not present in that study. Here, we see that the first covariate, cancer type, has PIPs of 1 for both SBS 17b and SBS 9 in the PCAWG cohort, but a very low PIP for SBS 5 in both cohorts. In addition, our randomly generated second covariate has very low PIPs across the board, as we should expect to see. 
+
+We can then look at the coefficients:
+
+```{r}
+# Look at coefficients
+results2[[2]][[5]]
+```
+
+Since the only meaningful effects appear to be from cancer type on SBS 17b and SBS 9 in the PCAWG cohort, these are the only coefficients that make sense to pay attention to. Here, we see that cancer type has negative coefficients, of $-3.79$ and $-2.58$ respectively, for these two signatures. This suggests that those with chronic lymphocytic leukemia in the PCAWG cohort have lower exposures to SBS 17b and SBS 9 than those with non-Hodgkin's lymphoma.
