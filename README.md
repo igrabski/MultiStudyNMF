@@ -4,7 +4,7 @@ We present a Bayesian multi-study NMF framework for mutational signatures analys
 
 We developed two models in this framework: the *discovery-only* model, in which signatures are found in a fully unsupervised manner, and the *recovery-discovery* model, in which informative priors are used to encourage the recovery of previously known signatures, in addition to estimating novel signatures. We also developed *covariate extensions* of both models, which allows sample-level covariate effects to be simultaneously estimated alongside the signatures. 
 
-Below, we describe the usage of our code. We also include example data and detailed demonstrations. 
+Below, we describe the usage of our code. We also include example data and detailed demonstrations. Our code can be used by cloning this GitHub repository, then simply sourcing the R scripts as needed. This should take only a few seconds. The dependencies are the `R` packages `SADISA` (tested with version 1.2) and `armspp` (tested with version 0.2.2). This code has been tested on `R` version 4.0 and version 4.1.3. 
 
 ## Usage: Discovery-Only Model
 
