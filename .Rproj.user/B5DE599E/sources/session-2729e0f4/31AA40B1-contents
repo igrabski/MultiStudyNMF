@@ -1,0 +1,76 @@
+---
+title: "Recovery Discovery"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{recovery_discovery}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup}
+library(MultiStudyNMF)
+```
+
+We provide demo data for this example as `data(lung)`. The R chunk below shows how this data was prepared, using data from PCAWG that can be downloaded [here](https://www.synapse.org/Synapse:syn11726620). As a simple example, we considered two studies: lung adenocarcinoma and lung squamous cell carcinoma. We ordered the mutational categories of this data to match that of the COSMIC reference signatures -- **this is essential for the recovery-discovery sampler.** 
+
+```{r,eval=F}
+## NOT RUN
+
+# Read in data and re-order mutational categories to match COSMIC
+data <- read.csv('../../../Downloads/WGS_PCAWG_2018_02_09/WGS_PCAWG.96.csv')
+data(cosmic)
+rownames(data) <- paste0(substr(data$Trinucleotide,0,1),'[',
+                         data$Mutation.type,']',
+                         substr(data$Trinucleotide,3,3))
+data <- data[cosmic$Type,]
+
+# Subset to the two cancers of interest
+M <- list(as.matrix(data[,substr(colnames(data),0,10)=='Lung.Adeno']),
+          as.matrix(data[,substr(colnames(data),0,10)=='Lung.SCC..']))
+```
+
+Note that the input data is a list of two matrices, each in mutational motifs-by-samples format. These correspond to the lung adenocarcinoma data (38 samples) and the lung squamous cell carcinoma data (48 samples) respectively.
+
+```{r}
+data(lung)
+M <- lung$M
+str(M)
+```
+
+Now we run the recovery-discovery sampler.
+
+```{r, results='hide', message=FALSE}
+set.seed(62524)
+out <- recovery_discovery_fit(M)
+```
+
+We can view the signature sharing matrices, which describe which of the estimated signatures are present in each of the two studies, for both the discovery and the recovery components respectively.
+
+```{r}
+out$A$discovery
+out$A$recovery
+```
+
+Here, we see a total of 46 signatures -- 5 discovery signatures (2 are common, and 3 belong only to lung squamous cell carcinoma), and 41 recovery signatures (24 are common, and the rest are specific to one or the other). This output also contains the signature estimates for both the discovery and recovery components in `out$P`, as well as the corresponding exposure estimates (`out$E`) and the study-specific normalization factors (`out$W`). More detail about this output can be found in the documentation by viewing `?recovery_discovery_fit`. 
+
+Below, we provide two convenience functions to help interpret the output. First, we can annotate each signature by its closest match to the COSMIC v3.2 signatures (further details in `?label_A`) and view the signature sharing matrices as follows for the discovery and recovery components:
+
+```{r}
+label_A(out$A$discovery,out$P$discovery)
+label_A(out$A$recovery,out$P$recovery)
+```
+
+Some signatures may only be present in a small subset of samples. We can view the proportion of samples in each study with relative exposures over a pre-specified threshold as follows (combining both the discovery and the recovery signatures):
+
+```{r}
+propA <- proportion_A(out,thresh=0.05,label=T)
+propA
+```
+
+If we just want to focus on the signature sharing pattern among signatures with high exposures in more than, say, 5\% of samples:
+
+```{r}
+propA[,sapply(1:ncol(propA),function(x) max(propA[,x])>0.05)]
+```
+
+We can see, for example, that the two smoking signatures SBS4 and SBS92 are present in both lung adenocarcinoma and lung squamous cell carcinoma, but are more prevalent in lung squamous cell carcinoma.

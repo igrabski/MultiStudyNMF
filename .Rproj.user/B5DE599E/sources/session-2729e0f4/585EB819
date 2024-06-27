@@ -1,0 +1,31 @@
+{
+    "id": "585EB819",
+    "path": "~/Documents/MultiStudyNMF/MultiStudyNMF/vignettes/recovery_discovery_covariates.Rmd",
+    "project_path": "vignettes/recovery_discovery_covariates.Rmd",
+    "type": "r_markdown",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1719437719451.0,
+    "source_on_save": false,
+    "relative_order": 10,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "76,36",
+        "scrollLine": "69",
+        "rmdVisualMode": "false",
+        "rmdVisualWrapConfigured": "true",
+        "docOutlineVisible": "0",
+        "rmdVisualModeLocation": "3841:301",
+        "rmdVisualCollapsedChunks": ""
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1719457983,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1719457983185,
+    "read_only": false,
+    "read_only_alternatives": []
+}
