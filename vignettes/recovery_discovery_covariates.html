@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Recovery Discovery Covariates</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Recovery Discovery Covariates</h1>
+
+
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(MultiStudyNMF)</span></code></pre></div>
+<p>We provide demo data for this example as <code>data(lymph)</code>.
+The R chunk below shows how this data was prepared, using data from
+PCAWG that can be downloaded <a href="https://www.synapse.org/Synapse:syn11726620">here</a>. As a simple
+example, we considered two related cancer types (non-Hodgkin’s lymphoma
+and chronic lymphocytic leukemia) from two different cohorts (PCAWG and
+an additional cohort). For the purposes of demonstrating this approach,
+we mixed together both cancer types, and separated into two studies by
+cohort. We chose to use the cancer type as the covariate. We also
+ordered the mutational categories of this data to match that of the
+COSMIC reference signatures – <strong>this is essential for the
+recovery-discovery sampler.</strong></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="do">## NOT RUN</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co"># Load in data from two cohorts and re-order to match COSMIC reference</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&#39;../../../Downloads/WGS_PCAWG_2018_02_09/WGS_PCAWG.96.csv&#39;</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="fu">data</span>(cosmic)</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="fu">rownames</span>(data) <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="fu">substr</span>(data<span class="sc">$</span>Trinucleotide,<span class="dv">0</span>,<span class="dv">1</span>),<span class="st">&#39;[&#39;</span>,</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>                         data<span class="sc">$</span>Mutation.type,<span class="st">&#39;]&#39;</span>,</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>                         <span class="fu">substr</span>(data<span class="sc">$</span>Trinucleotide,<span class="dv">3</span>,<span class="dv">3</span>))</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>data <span class="ot">&lt;-</span> data[cosmic<span class="sc">$</span>Type,]</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>other <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&#39;../../../Downloads/WGS_Other_2018_04_13/WGS_Other.96.csv&#39;</span>)</span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="fu">rownames</span>(other) <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="fu">substr</span>(other<span class="sc">$</span>Trinucleotide,<span class="dv">0</span>,<span class="dv">1</span>),<span class="st">&#39;[&#39;</span>,</span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>                         other<span class="sc">$</span>Mutation.type,<span class="st">&#39;]&#39;</span>,</span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>                         <span class="fu">substr</span>(other<span class="sc">$</span>Trinucleotide,<span class="dv">3</span>,<span class="dv">3</span>))</span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>other <span class="ot">&lt;-</span> other[cosmic<span class="sc">$</span>Type,]</span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a></span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="co"># Subset to the two cancers of interest</span></span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a>cancer_id <span class="ot">&lt;-</span> <span class="fu">substr</span>(<span class="fu">colnames</span>(data),<span class="dv">0</span>,<span class="dv">10</span>)</span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="fu">names</span>(cancer_id) <span class="ot">&lt;-</span> <span class="fu">colnames</span>(data)</span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a>cancer_id2 <span class="ot">&lt;-</span> <span class="fu">substr</span>(<span class="fu">colnames</span>(other),<span class="dv">0</span>,<span class="dv">10</span>)</span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a><span class="fu">names</span>(cancer_id2) <span class="ot">&lt;-</span> <span class="fu">colnames</span>(other)</span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a></span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a>data <span class="ot">&lt;-</span> data[,cancer_id<span class="sc">%in%</span><span class="fu">c</span>(<span class="st">&#39;Lymph.BNHL&#39;</span>,<span class="st">&#39;Lymph.CLL.&#39;</span>)]</span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a>cancer_id <span class="ot">&lt;-</span> cancer_id[<span class="fu">colnames</span>(data)]</span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a>other <span class="ot">&lt;-</span> other[,cancer_id2<span class="sc">%in%</span><span class="fu">c</span>(<span class="st">&#39;Lymph.BNHL&#39;</span>,<span class="st">&#39;Lymph.CLL.&#39;</span>)]</span>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a>cancer_id2 <span class="ot">&lt;-</span> cancer_id2[<span class="fu">colnames</span>(other)]</span>
+<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a></span>
+<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a><span class="co"># For the purposes of the vignette, randomly subsample both to a smaller size</span></span>
+<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">31623</span>)</span>
+<span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a>subsamp1 <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">ncol</span>(data),<span class="dv">40</span>,<span class="at">replace=</span>F)</span>
+<span id="cb2-31"><a href="#cb2-31" tabindex="-1"></a>data <span class="ot">&lt;-</span> data[,subsamp1]</span>
+<span id="cb2-32"><a href="#cb2-32" tabindex="-1"></a>cancer_id <span class="ot">&lt;-</span> cancer_id[subsamp1]</span>
+<span id="cb2-33"><a href="#cb2-33" tabindex="-1"></a><span class="fu">names</span>(cancer_id) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb2-34"><a href="#cb2-34" tabindex="-1"></a></span>
+<span id="cb2-35"><a href="#cb2-35" tabindex="-1"></a>subsamp2 <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">which</span>(cancer_id2<span class="sc">==</span><span class="st">&#39;Lymph.CLL.&#39;</span>),<span class="dv">30</span>,<span class="at">replace=</span>F)</span>
+<span id="cb2-36"><a href="#cb2-36" tabindex="-1"></a>other <span class="ot">&lt;-</span> other[,<span class="fu">c</span>(<span class="fu">which</span>(cancer_id2<span class="sc">==</span><span class="st">&#39;Lymph.BNHL&#39;</span>),subsamp2)]</span>
+<span id="cb2-37"><a href="#cb2-37" tabindex="-1"></a>cancer_id2 <span class="ot">&lt;-</span> cancer_id2[<span class="fu">c</span>(<span class="fu">which</span>(cancer_id2<span class="sc">==</span><span class="st">&#39;Lymph.BNHL&#39;</span>),subsamp2)]</span>
+<span id="cb2-38"><a href="#cb2-38" tabindex="-1"></a><span class="fu">names</span>(cancer_id2) <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb2-39"><a href="#cb2-39" tabindex="-1"></a></span>
+<span id="cb2-40"><a href="#cb2-40" tabindex="-1"></a><span class="co"># Set up final data and covariates input</span></span>
+<span id="cb2-41"><a href="#cb2-41" tabindex="-1"></a>cancer_id <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(cancer_id<span class="sc">==</span><span class="st">&#39;Lymph.CLL.&#39;</span>,<span class="dv">1</span>,<span class="dv">0</span>)</span>
+<span id="cb2-42"><a href="#cb2-42" tabindex="-1"></a>cancer_id2 <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(cancer_id2<span class="sc">==</span><span class="st">&#39;Lymph.CLL.&#39;</span>,<span class="dv">1</span>,<span class="dv">0</span>)</span>
+<span id="cb2-43"><a href="#cb2-43" tabindex="-1"></a>M <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="fu">as.matrix</span>(data),</span>
+<span id="cb2-44"><a href="#cb2-44" tabindex="-1"></a>          <span class="fu">as.matrix</span>(other))</span>
+<span id="cb2-45"><a href="#cb2-45" tabindex="-1"></a>cov <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="fu">matrix</span>(cancer_id,<span class="at">nrow=</span><span class="dv">1</span>),</span>
+<span id="cb2-46"><a href="#cb2-46" tabindex="-1"></a>            <span class="fu">matrix</span>(cancer_id2,<span class="at">nrow=</span><span class="dv">1</span>))</span></code></pre></div>
+<p>Note that the input data is a list of two matrices, each in
+mutational motifs-by-samples format, and a list of two covariates
+matrices, each in covariates-by-samples format. Here, both studies have
+40 samples.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">data</span>(lymph)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>M <span class="ot">&lt;-</span> lymph<span class="sc">$</span>M</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>cov <span class="ot">&lt;-</span> lymph<span class="sc">$</span>cov</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="fu">str</span>(M)</span></code></pre></div>
+<pre><code>## List of 2
+##  $ : int [1:96, 1:40] 103 58 9 74 93 49 12 122 171 100 ...
+##   ..- attr(*, &quot;dimnames&quot;)=List of 2
+##   .. ..$ : chr [1:96] &quot;A[C&gt;A]A&quot; &quot;A[C&gt;A]C&quot; &quot;A[C&gt;A]G&quot; &quot;A[C&gt;A]T&quot; ...
+##   .. ..$ : chr [1:40] &quot;Lymph.BNHL..SP116686&quot; &quot;Lymph.BNHL..SP116622&quot; &quot;Lymph.BNHL..SP116723&quot; &quot;Lymph.CLL..SP13280&quot; ...
+##  $ : int [1:96, 1:40] 18 4 6 14 4 4 0 4 16 16 ...
+##   ..- attr(*, &quot;dimnames&quot;)=List of 2
+##   .. ..$ : chr [1:96] &quot;A[C&gt;A]A&quot; &quot;A[C&gt;A]C&quot; &quot;A[C&gt;A]G&quot; &quot;A[C&gt;A]T&quot; ...
+##   .. ..$ : chr [1:40] &quot;Lymph.BNHL..001.0002.03TD&quot; &quot;Lymph.BNHL..003.0005.09TD&quot; &quot;Lymph.BNHL..004.0012.05TD&quot; &quot;Lymph.BNHL..012.02.1TD&quot; ...</code></pre>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">str</span>(cov)</span></code></pre></div>
+<pre><code>## List of 2
+##  $ : num [1, 1:40] 0 0 0 1 0 0 0 0 0 0 ...
+##  $ : num [1, 1:40] 0 0 0 0 0 0 0 0 0 0 ...</code></pre>
+<p>Now we run the recovery-discovery sampler with covariates.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">62524</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>out <span class="ot">&lt;-</span> <span class="fu">recovery_discovery_cov_fit</span>(M,cov)</span></code></pre></div>
+<p>We can view the signature sharing matrices, which describe which of
+the estimated signatures are present in each of the two studies, for
+both the discovery and the recovery components respectively.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>out<span class="sc">$</span>A<span class="sc">$</span>discovery</span></code></pre></div>
+<pre><code>##        d_sig1 d_sig2 d_sig3 d_sig4 d_sig5
+## study1      0      1      1      0      1
+## study2      1      0      0      1      0</code></pre>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>out<span class="sc">$</span>A<span class="sc">$</span>recovery</span></code></pre></div>
+<pre><code>##        r_sig1 r_sig2 r_sig3 r_sig4 r_sig5 r_sig6 r_sig7 r_sig8 r_sig9 r_sig10 r_sig11 r_sig12
+## study1      1      1      1      1      1      1      1      1      1       1       1       1
+## study2      1      0      0      1      0      0      1      1      0       0       1       1
+##        r_sig13 r_sig14 r_sig15 r_sig16 r_sig17 r_sig18 r_sig19 r_sig20 r_sig21 r_sig22 r_sig23
+## study1       1       1       1       1       1       1       1       1       1       1       1
+## study2       1       0       1       1       1       0       1       0       1       0       0
+##        r_sig24 r_sig25 r_sig26 r_sig27 r_sig28 r_sig29 r_sig30 r_sig31 r_sig32
+## study1       1       0       1       1       1       1       1       1       1
+## study2       0       1       1       1       0       0       1       0       0</code></pre>
+<p>Here, we see a total of 37 signatures – 5 in the discovery component
+(all unique to either one study or the other), and 32 in the recovery
+component (15 common to both studies, and the rest unique to one or the
+other).</p>
+<p>We can also view the posterior inclusion probability for each
+covariate affecting the exposure to each discovery and recovery
+signature in each study.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>out<span class="sc">$</span>indics<span class="sc">$</span>discovery</span></code></pre></div>
+<pre><code>## $study1
+##      d_sig2 d_sig3 d_sig5
+## [1,]      1  0.019      1
+## 
+## $study2
+##       d_sig1 d_sig4
+## [1,] 0.00125 0.9995</code></pre>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>out<span class="sc">$</span>indics<span class="sc">$</span>recovery</span></code></pre></div>
+<pre><code>## $study1
+##      r_sig1 r_sig2 r_sig3 r_sig4  r_sig5 r_sig6 r_sig7  r_sig8  r_sig9 r_sig10 r_sig11 r_sig12
+## [1,] 0.0485      1  0.009 0.0095 0.95925  0.966  0.004 0.76025 0.01775       1  0.0025  0.9995
+##      r_sig13 r_sig14 r_sig15 r_sig16 r_sig17 r_sig18 r_sig19 r_sig20 r_sig21 r_sig22 r_sig23 r_sig24
+## [1,] 0.00425       1       1  0.9215  0.0425 0.00425 0.00825       1 0.04725 0.20925       1       1
+##      r_sig26 r_sig27 r_sig28 r_sig29 r_sig30 r_sig31 r_sig32
+## [1,]       1   0.015 0.00275  0.9995   0.325       1 0.06775
+## 
+## $study2
+##       r_sig1  r_sig4  r_sig7  r_sig8 r_sig11 r_sig12 r_sig13 r_sig15 r_sig16 r_sig17 r_sig19 r_sig21
+## [1,] 0.31125 0.14525 0.00925 0.01425   0.003  0.5045 0.02875 0.90125  0.0695  0.0055 0.00725 0.00475
+##      r_sig25 r_sig26 r_sig27 r_sig30
+## [1,]   0.001 0.08375 0.01525 0.00775</code></pre>
+<p>Here, we see that the covariate (cancer type) has a high probability
+of affecting the exposures to several signatures, including some in the
+discovery component and some in the recovery component, in each
+study.</p>
+<p>Similarly, we can view the coefficients for each covariate and
+discovery or recovery signature in each study. Note that these
+coefficients represent the effect conditional on inclusion.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>out<span class="sc">$</span>coefs<span class="sc">$</span>discovery</span></code></pre></div>
+<pre><code>## $study1
+##         d_sig2    d_sig3    d_sig5
+## [1,] -5.740885 0.7288754 -5.721298
+## 
+## $study2
+##         d_sig1    d_sig4
+## [1,] 0.2169112 -2.301146</code></pre>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a>out<span class="sc">$</span>coefs<span class="sc">$</span>recovery</span></code></pre></div>
+<pre><code>## $study1
+##          r_sig1    r_sig2     r_sig3     r_sig4   r_sig5    r_sig6     r_sig7    r_sig8     r_sig9
+## [1,] -0.7871128 -3.634625 -0.7236415 -0.6549823 -4.71352 -3.076526 -0.5312713 -1.510189 -0.8835841
+##        r_sig10    r_sig11   r_sig12   r_sig13   r_sig14   r_sig15   r_sig16    r_sig17   r_sig18
+## [1,] -5.423296 -0.6882809 -3.042442 0.7748559 -4.974929 -6.777148 -1.783152 -0.9186708 0.2193623
+##         r_sig19   r_sig20    r_sig21   r_sig22   r_sig23  r_sig24   r_sig26   r_sig27    r_sig28
+## [1,] -0.7979543 -5.696472 -0.9943366 -3.692421 -4.351841 -4.94985 -4.998306 -1.070758 -0.2234237
+##        r_sig29   r_sig30   r_sig31  r_sig32
+## [1,] -3.069749 -1.365402 -5.223336 -1.09453
+## 
+## $study2
+##         r_sig1    r_sig4     r_sig7   r_sig8   r_sig11   r_sig12   r_sig13   r_sig15  r_sig16
+## [1,] -1.282233 -1.103608 -0.7320765 0.745004 0.5493251 -1.540666 -1.093114 -1.962248 1.159249
+##        r_sig17    r_sig19   r_sig21   r_sig25   r_sig26   r_sig27    r_sig30
+## [1,] 0.7109462 -0.7043106 -0.653278 0.3151916 -1.643033 -1.045134 -0.7182098</code></pre>
+<p>For example, in study 2, this output tells us that being a CLL sample
+results in lower exposures to discovery signature 4 by a factor of
+<code>exp(-2.30)</code> with high certainty (posterior inclusion
+probability of 0.999 from before), and lower exposures to recovery
+signature 1 by a factor of <code>exp(-1.28)</code> but with lower
+certainty (posterior inclusion probability of 0.31 from before), among
+others.</p>
+<p>This output also contains the signature estimates for both the
+discovery and recovery components in <code>out$P</code>, as well as the
+corresponding exposure estimates (<code>out$E</code>) and the
+study-specific normalization factors (<code>out$W</code>). More detail
+about this output can be found in the documentation by viewing
+<code>?recovery_discovery_cov_fit</code>.</p>
+<p>Below, we provide two convenience functions to help interpret the
+output. First, we can annotate each signature by its closest match to
+the COSMIC v3.2 signatures (further details in <code>?label_A</code>)
+and view the signature sharing matrices as follows for the discovery and
+recovery components:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="fu">label_A</span>(out<span class="sc">$</span>A<span class="sc">$</span>discovery,out<span class="sc">$</span>P<span class="sc">$</span>discovery)</span></code></pre></div>
+<pre><code>##        Unlabeled 1 Pseudo SBS5 Pseudo SBS5.1 Pseudo SBS5.2 Unlabeled 2
+## study1           0           1             1             0           1
+## study2           1           0             0             1           0</code></pre>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a><span class="fu">label_A</span>(out<span class="sc">$</span>A<span class="sc">$</span>recovery,out<span class="sc">$</span>P<span class="sc">$</span>recovery)</span></code></pre></div>
+<pre><code>##        SBS1 SBS2 SBS3 SBS5 SBS7a SBS7d SBS8 SBS9 SBS10c SBS10d SBS12 SBS13 SBS15 SBS17a SBS17b SBS18
+## study1    1    1    1    1     1     1    1    1      1      1     1     1     1      1      1     1
+## study2    1    0    0    1     0     0    1    1      0      0     1     1     1      0      1     1
+##        SBS19 SBS21 SBS22 SBS28 SBS30 SBS32 SBS34 SBS37 SBS43 SBS44 SBS50 SBS51 SBS84 SBS85 SBS86
+## study1     1     1     1     1     1     1     1     1     0     1     1     1     1     1     1
+## study2     1     0     1     0     1     0     0     0     1     1     1     0     0     1     0
+##        SBS93
+## study1     1
+## study2     0</code></pre>
+<p>Some signatures may only be present in a small subset of samples. We
+can view the proportion of samples in each study with relative exposures
+over a pre-specified threshold as follows (combining both the discovery
+and the recovery signatures):</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a>propA <span class="ot">&lt;-</span> <span class="fu">proportion_A</span>(out,<span class="at">thresh=</span><span class="fl">0.05</span>,<span class="at">label=</span>T)</span>
+<span id="cb24-2"><a href="#cb24-2" tabindex="-1"></a>propA</span></code></pre></div>
+<pre><code>##        Unlabeled 1 Pseudo SBS5 Pseudo SBS5.1 Pseudo SBS5.2 Unlabeled 2 SBS1 SBS2  SBS3 SBS5 SBS7a
+## study1           0       0.525         0.575           0.0        0.25  0.8    0 0.325 0.65     0
+## study2           1       0.000         0.000           0.1        0.00  0.2    0 0.000 1.00     0
+##        SBS7d  SBS8 SBS9 SBS10c SBS10d SBS12 SBS13 SBS15 SBS17a SBS17b SBS18 SBS19 SBS21 SBS22 SBS28
+## study1     0 0.550 0.65    0.1  0.025 0.350     0 0.000   0.05    0.1 0.275 0.175     0     0     0
+## study2     0 0.325 0.60    0.0  0.000 0.125     0 0.025   0.00    0.0 0.450 0.000     0     0     0
+##        SBS30 SBS32 SBS34 SBS37 SBS43 SBS44 SBS50 SBS51 SBS84 SBS85 SBS86 SBS93
+## study1 0.475     0     0     0 0.000 0.025     0 0.025 0.075 0.275     0   0.1
+## study2 0.300     0     0     0 0.025 0.000     0 0.000 0.000 0.150     0   0.0</code></pre>
+<p>If we just want to focus on the signature sharing pattern among
+signatures with high exposures in more than, say, 5% of samples:</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" tabindex="-1"></a>propA[,<span class="fu">sapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">ncol</span>(propA),<span class="cf">function</span>(x) <span class="fu">max</span>(propA[,x])<span class="sc">&gt;</span><span class="fl">0.05</span>)]</span></code></pre></div>
+<pre><code>##        Unlabeled 1 Pseudo SBS5 Pseudo SBS5.1 Pseudo SBS5.2 Unlabeled 2 SBS1  SBS3 SBS5  SBS8 SBS9
+## study1           0       0.525         0.575           0.0        0.25  0.8 0.325 0.65 0.550 0.65
+## study2           1       0.000         0.000           0.1        0.00  0.2 0.000 1.00 0.325 0.60
+##        SBS10c SBS12 SBS17b SBS18 SBS19 SBS30 SBS84 SBS85 SBS93
+## study1    0.1 0.350    0.1 0.275 0.175 0.475 0.075 0.275   0.1
+## study2    0.0 0.125    0.0 0.450 0.000 0.300 0.000 0.150   0.0</code></pre>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
