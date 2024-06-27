@@ -1,0 +1,67 @@
+---
+title: "Discovery Only"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{discovery_only}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup}
+library(MultiStudyNMF)
+```
+
+We provide demo data for this example as `data(lung)`. The R chunk below shows how this data was prepared, using data from PCAWG that can be downloaded [here](https://www.synapse.org/Synapse:syn11726620). As a simple example, we considered two studies: lung adenocarcinoma and lung squamous cell carcinoma. We ordered the mutational categories of this data to match that of the COSMIC reference signatures, for easier comparison later on.
+
+```{r,eval=F}
+## NOT RUN
+
+# Read in data and re-order mutational categories to match COSMIC
+data <- read.csv('../../../Downloads/WGS_PCAWG_2018_02_09/WGS_PCAWG.96.csv')
+data(cosmic)
+rownames(data) <- paste0(substr(data$Trinucleotide,0,1),'[',
+                         data$Mutation.type,']',
+                         substr(data$Trinucleotide,3,3))
+data <- data[cosmic$Type,]
+
+# Subset to the two cancers of interest
+M <- list(as.matrix(data[,substr(colnames(data),0,10)=='Lung.Adeno']),
+          as.matrix(data[,substr(colnames(data),0,10)=='Lung.SCC..']))
+```
+
+Note that the input data is a list of two matrices, each in mutational motifs-by-samples format. These correspond to the lung adenocarcinoma data (38 samples) and the lung squamous cell carcinoma data (48 samples) respectively.
+
+```{r}
+data(lung)
+M <- lung$M
+str(M)
+```
+
+Now we run the discovery-only sampler.
+
+```{r, results='hide', message=FALSE}
+set.seed(62524)
+out <- discovery_fit(M)
+```
+
+We can view the signature sharing matrix, which describes which of the estimated signatures are present in each of the two studies.
+
+```{r}
+out$A
+```
+
+Here, we see that we found a total of 14 signatures, of which the majority belong to both studies. There are three signatures (labeled as sig3, sig8, and sig12) which are only found in the second study, i.e. lung squamous cell carcinoma. This output also contains the signatures estimates (`out$P`), the exposures estimates (`out$E`), and the study-specific normalization factors (`out$W`). More detail about this output can be found in the documentation by viewing `?discovery_fit`. 
+
+Below, we provide two convenience functions to help interpret the output. First, assuming that the mutational motifs of the input data matched the order of the COSMIC signatures, we can annotate each signature by its closest match to the COSMIC v3.2 signatures (further details in `?label_A`) and view the signature sharing matrix as follows:
+
+```{r}
+label_A(out$A,out$P)
+```
+
+Some signatures may only be present in a small subset of samples. We can view the proportion of samples in each study with relative exposures over a pre-specified threshold as follows:
+
+```{r}
+proportion_A(out,thresh=0.05,label=T)
+```
+
+For example, here we see that one of the signatures unique to squamous cell carcinoma, SBS33, only has high exposures in a small subset (around 6\%) of samples, whereas another unique signature, SBS92, has high exposures to a larger subset (38\%).

@@ -1,0 +1,120 @@
+---
+title: "Discovery Only Covariates"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{discovery_covariates}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup}
+library(MultiStudyNMF)
+```
+
+We provide demo data for this example as `data(lymph)`. The R chunk below shows how this data was prepared, using data from PCAWG that can be downloaded [here](https://www.synapse.org/Synapse:syn11726620). As a simple example, we considered two related cancer types (non-Hodgkin's lymphoma and chronic lymphocytic leukemia) from two different cohorts (PCAWG and an additional cohort). For the purposes of demonstrating this approach, we mixed together both cancer types, and separated into two studies by cohort. We chose to use the cancer type as the covariate. Note as well that we ordered the mutational categories of this data to match that of the COSMIC reference signatures, for easier comparison later on.
+
+```{r,eval=F}
+## NOT RUN
+
+# Load in data from two cohorts and re-order to match COSMIC reference
+data <- read.csv('../../../Downloads/WGS_PCAWG_2018_02_09/WGS_PCAWG.96.csv')
+data(cosmic)
+rownames(data) <- paste0(substr(data$Trinucleotide,0,1),'[',
+                         data$Mutation.type,']',
+                         substr(data$Trinucleotide,3,3))
+data <- data[cosmic$Type,]
+
+other <- read.csv('../../../Downloads/WGS_Other_2018_04_13/WGS_Other.96.csv')
+rownames(other) <- paste0(substr(other$Trinucleotide,0,1),'[',
+                         other$Mutation.type,']',
+                         substr(other$Trinucleotide,3,3))
+other <- other[cosmic$Type,]
+
+# Subset to the two cancers of interest
+cancer_id <- substr(colnames(data),0,10)
+names(cancer_id) <- colnames(data)
+cancer_id2 <- substr(colnames(other),0,10)
+names(cancer_id2) <- colnames(other)
+
+data <- data[,cancer_id%in%c('Lymph.BNHL','Lymph.CLL.')]
+cancer_id <- cancer_id[colnames(data)]
+other <- other[,cancer_id2%in%c('Lymph.BNHL','Lymph.CLL.')]
+cancer_id2 <- cancer_id2[colnames(other)]
+
+# For the purposes of the vignette, randomly subsample both to a smaller size
+set.seed(31623)
+subsamp1 <- sample(1:ncol(data),40,replace=F)
+data <- data[,subsamp1]
+cancer_id <- cancer_id[subsamp1]
+names(cancer_id) <- NULL
+
+subsamp2 <- sample(which(cancer_id2=='Lymph.CLL.'),30,replace=F)
+other <- other[,c(which(cancer_id2=='Lymph.BNHL'),subsamp2)]
+cancer_id2 <- cancer_id2[c(which(cancer_id2=='Lymph.BNHL'),subsamp2)]
+names(cancer_id2) <- NULL
+
+# Set up final data and covariates input
+cancer_id <- ifelse(cancer_id=='Lymph.CLL.',1,0)
+cancer_id2 <- ifelse(cancer_id2=='Lymph.CLL.',1,0)
+M <- list(as.matrix(data),
+          as.matrix(other))
+cov <- list(matrix(cancer_id,nrow=1),
+            matrix(cancer_id2,nrow=1))
+```
+
+Note that the input data is a list of two matrices, each in mutational motifs-by-samples format, and a list of two covariates matrices, each in covariates-by-samples format. Here, both studies have 40 samples.
+
+```{r}
+data(lymph)
+M <- lymph$M
+cov <- lymph$cov
+str(M)
+str(cov)
+```
+
+Now we run the discovery-only sampler with covariates.
+
+```{r, results='hide', message=FALSE}
+set.seed(62524)
+out <- discovery_cov_fit(M,cov)
+```
+
+We can view the signature sharing matrix, which describes which of the estimated signatures are present in each of the two studies.
+
+```{r}
+out$A
+```
+
+Here, we see that we found a total of 13 signatures, of which 6 are common to both studies, and the rest belong to just the first study or just the second study.
+
+We can also view the posterior inclusion probability for each covariate affecting the exposure to each signature in each study.
+
+```{r}
+out$indics
+```
+
+Here, we see that the covariate (cancer type) has a high probability of affecting the exposures to many of the signatures in study 1, and to fewer of the signatures in study 2.
+
+Similarly, we can view the coefficients for each covariate and signature in each study. Note that these coefficients represent the effect conditional on inclusion. 
+
+```{r}
+out$coefs
+```
+
+For example, in study 1, this output tells us that being a CLL sample results in lower exposures to signature 1 by a factor of `exp(-3.00)` with high certainty (posterior inclusion probability of 0.999 from before), and higher exposures to signature 6 by a factor of `exp(1.48)` but with lower certainty (posterior inclusion probability of 0.21 from before), among others.
+
+This output also contains the signatures estimates (`out$P`), the exposures estimates (`out$E`), and the study-specific normalization factors (`out$W`). More detail about this output can be found in the documentation by viewing `?discovery_cov_fit`. 
+
+Below, we provide two convenience functions to help interpret the output. First, assuming that the mutational motifs of the input data matched the order of the COSMIC signatures, we can annotate each signature by its closest match to the COSMIC v3.2 signatures (further details in `?label_A`) and view the signature sharing matrix as follows:
+
+```{r}
+label_A(out$A,out$P)
+```
+
+Some signatures may only be present in a small subset of samples. We can view the proportion of samples in each study with relative exposures over a pre-specified threshold as follows:
+
+```{r}
+proportion_A(out,thresh=0.05,label=T)
+```
+
+For example, here we see that one common signature, SBS17b, has a fair degree of prevalence in both studies. By contrast, while SBS51 is present in both studies, it has high exposure only in a very small percent of samples in study 1.
