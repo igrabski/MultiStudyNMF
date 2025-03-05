@@ -188,9 +188,9 @@ recovery_discovery <- function(M,lambda_p=0.5,a_p=5,b_p=0.05,lambda_e=0.1,a_e=5,
   if (fixed) {
     Ar <- A.fixed[[2]]
     to.keep <- which(colSums(Ar)>0)
-    sigs.r[[1]] <- sigs.r[[1]][,to.keep]
-    sigs.r[[2]] <- sigs.r[[2]][,to.keep]
-    Ar <- Ar[,to.keep]
+    sigs.r[[1]] <- sigs.r[[1]][,to.keep,drop=F]
+    sigs.r[[2]] <- sigs.r[[2]][,to.keep,drop=F]
+    Ar <- Ar[,to.keep,drop=F]
   }
   Nr <- ncol(Ar)
 
@@ -223,8 +223,8 @@ recovery_discovery <- function(M,lambda_p=0.5,a_p=5,b_p=0.05,lambda_e=0.1,a_e=5,
     Pr <- inits[[3]]
     Er <- inits[[4]]
     if (fixed) {
-      Pr <- Pr[,to.keep]
-      Er <- lapply(1:S,function(s) Er[[s]][to.keep,])
+      Pr <- Pr[,to.keep,drop=F]
+      Er <- lapply(1:S,function(s) Er[[s]][to.keep,,drop=F])
     }
   }
 
